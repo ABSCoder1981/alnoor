@@ -11,6 +11,12 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Required by LiveKit's Android SDK (audio routing library). Restricted to that one group
+        // so no other dependency can be resolved from JitPack.
+        exclusiveContent {
+            forRepository { maven("https://jitpack.io") }
+            filter { includeGroup("com.github.davidliu") }
+        }
     }
 }
 

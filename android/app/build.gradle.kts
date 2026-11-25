@@ -1,6 +1,7 @@
 ﻿plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -22,7 +23,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Phase 2 test client default: the Android emulator reaches the PC through 10.0.2.2.
+            buildConfigField("String", "DEFAULT_DEV_API_BASE_URL", "\"http://10.0.2.2:5080\"")
+        }
         release {
+            // The Phase 2 test client is not available in release builds.
+            buildConfigField("String", "DEFAULT_DEV_API_BASE_URL", "\"\"")
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             // Release signing uses a private keystore kept outside Git (configured in Phase 7).
@@ -36,6 +43,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -43,11 +51,18 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    implementation(libs.livekit.android)
+    implementation(libs.livekit.android.compose)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.kotlinx.serialization)
+    implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.junit)
 }

@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { fetchHealth, type HealthResult } from './api/health'
 
 type ViewState = { state: 'loading' } | HealthResult
+
+// Phase 2 proof of concept. import.meta.env.DEV is false in production builds, so this code is not bundled there.
+const LiveKitPoc = import.meta.env.DEV ? lazy(() => import('./poc/LiveKitPoc')) : null
 
 function App() {
   const [health, setHealth] = useState<ViewState>({ state: 'loading' })
@@ -45,6 +48,12 @@ function App() {
           </button>
         )}
       </section>
+
+      {LiveKitPoc && (
+        <Suspense fallback={<p>Loading test room…</p>}>
+          <LiveKitPoc />
+        </Suspense>
+      )}
     </main>
   )
 }

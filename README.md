@@ -4,7 +4,7 @@ Live online Quran classes for one teacher and small groups of students: an Andro
 
 - Requirements: [docs/PRD.md](docs/PRD.md) (approved v1.0) is the source of truth.
 - Engineering rules for contributors and AI assistants: [CLAUDE.md](CLAUDE.md).
-- Status: **Phase 1 – project foundation** (PRD section 26).
+- Status: **Phase 2 – LiveKit proof of concept** (PRD section 26). Decisions: [docs/adr/](docs/adr/), audio tests: [docs/audio-decisions.md](docs/audio-decisions.md).
 
 ## Repository layout
 
@@ -38,15 +38,25 @@ cd backend
 dotnet user-secrets --project src/ALNoor.Api set "ConnectionStrings:Default" \
   "Host=localhost;Port=5432;Database=alnoor_dev;Username=alnoor;Password=<your POSTGRES_PASSWORD>"
 dotnet tool restore            # installs dotnet-ef (pinned in backend/dotnet-tools.json)
+
+# 4. Local LiveKit server (Windows; keep this terminal open). Downloads a pinned, checksum-verified
+#    livekit-server into .tools/, creates dev keys in .env and stores LiveKit settings in user-secrets.
+cd ..
+powershell -ExecutionPolicy Bypass -File scripts/livekit-dev.ps1
 ```
+
+The API refuses to start without valid `ConnectionStrings:Default` and `LiveKit:*` settings (the LiveKit secret must be at least 32 characters).
 
 ## Run
 
 | Part | Command | URL |
 |---|---|---|
-| API | `cd backend && dotnet run --project src/ALNoor.Api` | http://localhost:5080/health (DB included), `/health/live` (process only), `/openapi/v1.json` (Development only) |
+| API | `cd backend && dotnet run --project src/ALNoor.Api` (add `--launch-profile lan` so phones on the same Wi-Fi can reach it) | http://localhost:5080/health (DB included), `/health/live` (process only), `/openapi/v1.json` (Development only) |
+| LiveKit (dev) | `scripts/livekit-dev.ps1` | `ws://<PC Wi-Fi IP>:7880` |
 | Web | `cd web && npm install && npm run dev` | http://localhost:5173 – shows whether it can reach the API |
-| Android | Open `android/` in Android Studio and run, or `cd android && ./gradlew assembleDebug` | – |
+| Android | Open `android/` in Android Studio and run, or `cd android && ./gradlew assembleDebug` | Debug builds open the Phase 2 LiveKit test client |
+
+In development the web app also shows the Phase 2 LiveKit test room (not included in production builds). How to run a recitation test: [docs/audio-decisions.md](docs/audio-decisions.md).
 
 The web app reads the API address from `VITE_API_BASE_URL` (see [web/.env.example](web/.env.example)); it defaults to `http://localhost:5080`.
 
@@ -54,8 +64,8 @@ The web app reads the API address from `VITE_API_BASE_URL` (see [web/.env.exampl
 
 | Part | Command |
 |---|---|
-| Backend | `cd backend && dotnet test` – database tests use Testcontainers and are **reported as skipped** (not passed) when Docker is not running |
-| Web | `cd web && npm run lint && npm run build` |
+| Backend | `cd backend && dotnet test` – PostgreSQL and LiveKit-server tests use Testcontainers and are **reported as skipped** (not passed) when Docker is not running; in CI they fail instead |
+| Web | `cd web && npm test && npm run lint && npm run build` (on Windows, run from a terminal whose path starts with an upper-case `C:`; a lower-case `c:` makes Vitest load twice and fail) |
 | Android | `cd android && ./gradlew testDebugUnitTest` |
 
 CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs all three on every push and pull request, including the database tests and dependency vulnerability checks.

@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.alnoor.app.ui.AppShell
+import com.alnoor.app.ui.poc.PocScreen
 import com.alnoor.app.ui.theme.ALNoorTheme
 
 class MainActivity : ComponentActivity() {
@@ -13,7 +14,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ALNoorTheme {
-                AppShell()
+                // Phase 2 LiveKit test client is only reachable in debug builds.
+                if (BuildConfig.DEBUG) PocScreen() else AppShell()
             }
         }
     }
