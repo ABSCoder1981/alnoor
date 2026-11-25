@@ -31,8 +31,25 @@ public sealed class PostgresFixture : IAsyncLifetime
         }
     }
 
-    public void SkipIfUnavailable() =>
-        Assert.SkipWhen(ConnectionString is null, $"Docker/PostgreSQL not available: {StartError}");
+    /// <summary>
+    /// Skips locally when Docker is missing, but fails in CI (where Docker must exist),
+    /// so a green CI run always means the database tests really executed.
+    /// </summary>
+    public void SkipIfUnavailable()
+    {
+        if (ConnectionString is not null)
+        {
+            return;
+        }
+
+        var message = $"Docker/PostgreSQL not available: {StartError}";
+        if (string.Equals(Environment.GetEnvironmentVariable("CI"), "true", StringComparison.OrdinalIgnoreCase))
+        {
+            Assert.Fail(message);
+        }
+
+        Assert.Skip(message);
+    }
 
     public async ValueTask DisposeAsync()
     {
