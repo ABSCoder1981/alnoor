@@ -1,0 +1,36 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+appsettings.*.local.json
+secrets.json
+
+# Dependencies and build output
+node_modules/
+bin/
+obj/
+dist/
+build/
+out/
+.next/
+coverage/
+
+# Logs and temp
+*.log
+logs/
+tmp/
+.cache/
+
+# Editor / OS
+.vs/
+.idea/
+*.suo
+*.user
+.DS_Store
+Thumbs.db
+
+# Claude local settings
+.claude/settings.local.json
