@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">ALNoor</string>
+    <string name="tagline">Online Quran Classroom</string>
+    <string name="shell_notice">App foundation. Features arrive in later phases.</string>
+</resources>
