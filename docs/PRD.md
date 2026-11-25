@@ -475,7 +475,7 @@ Versions below were checked on 2026-11-22 and must be re-verified when Phase 1 s
 | Android storage | DataStore + Android Keystore encryption (e.g. Tink) for tokens | latest | `EncryptedSharedPreferences` (security-crypto) is deprecated |
 | Android RTC | LiveKit Android SDK `io.livekit:livekit-android` 2.x (2.26.x seen May 2026) + `livekit-android-compose-components` | verify at Phase 1 | — |
 | Android build | Android Studio (latest stable), AGP latest, `minSdk 26`, `targetSdk 36` | verify | — |
-| Web | React 19, TypeScript 5.x, Vite (latest), `livekit-client` 2.x, `@livekit/components-react` 2.x | verify | — |
+| Web | React 19, TypeScript 7.x (decided 2026-11-25; was 5.x), Vite (latest), `livekit-client` 2.x, `@livekit/components-react` 2.x | verify | — |
 | Hosting | Low-cost VPS (Linux, 2 vCPU/4 GB), Docker Compose, Caddy (automatic HTTPS) | — | §22 |
 | Static web hosting | Cloudflare Pages / Netlify / Vercel free tier | — | — |
 | RTC | LiveKit Cloud – Build (free) for dev, Ship for regular classes | — | §14, §23 |
