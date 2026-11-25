@@ -2,11 +2,7 @@ using Testcontainers.PostgreSql;
 
 namespace ALNoor.Api.Tests.Infrastructure;
 
-/// <summary>
-/// Starts a throwaway PostgreSQL container (same major version as docker-compose.yml).
-/// If Docker is not available, <see cref="StartError"/> is set and dependent tests are skipped
-/// with an explicit reason rather than silently passing.
-/// </summary>
+/// <summary>Starts a throwaway PostgreSQL container (same major version as docker-compose.yml).</summary>
 public sealed class PostgresFixture : IAsyncLifetime
 {
     private PostgreSqlContainer? _container;
@@ -31,25 +27,8 @@ public sealed class PostgresFixture : IAsyncLifetime
         }
     }
 
-    /// <summary>
-    /// Skips locally when Docker is missing, but fails in CI (where Docker must exist),
-    /// so a green CI run always means the database tests really executed.
-    /// </summary>
-    public void SkipIfUnavailable()
-    {
-        if (ConnectionString is not null)
-        {
-            return;
-        }
-
-        var message = $"Docker/PostgreSQL not available: {StartError}";
-        if (string.Equals(Environment.GetEnvironmentVariable("CI"), "true", StringComparison.OrdinalIgnoreCase))
-        {
-            Assert.Fail(message);
-        }
-
-        Assert.Skip(message);
-    }
+    public void SkipIfUnavailable() =>
+        DockerRequirement.SkipOrFailIfUnavailable(ConnectionString is not null, "PostgreSQL", StartError);
 
     public async ValueTask DisposeAsync()
     {

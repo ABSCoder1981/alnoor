@@ -34,3 +34,6 @@ Thumbs.db
 
 # Claude local settings
 .claude/settings.local.json
+
+# Locally downloaded dev tools (livekit-server etc.)
+.tools/
