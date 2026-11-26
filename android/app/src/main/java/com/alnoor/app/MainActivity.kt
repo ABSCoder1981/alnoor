@@ -4,18 +4,22 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.alnoor.app.ui.AppShell
-import com.alnoor.app.ui.poc.PocScreen
+import androidx.activity.viewModels
+import com.alnoor.app.ui.auth.AuthRoot
+import com.alnoor.app.ui.auth.AuthViewModel
 import com.alnoor.app.ui.theme.ALNoorTheme
 
 class MainActivity : ComponentActivity() {
+    private val authViewModel: AuthViewModel by viewModels {
+        AuthViewModel.factory((application as ALNoorApplication).container)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             ALNoorTheme {
-                // Phase 2 LiveKit test client is only reachable in debug builds.
-                if (BuildConfig.DEBUG) PocScreen() else AppShell()
+                AuthRoot(authViewModel)
             }
         }
     }

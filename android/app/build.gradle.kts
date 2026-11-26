@@ -26,10 +26,14 @@ android {
         debug {
             // Phase 2 test client default: the Android emulator reaches the PC through 10.0.2.2.
             buildConfigField("String", "DEFAULT_DEV_API_BASE_URL", "\"http://10.0.2.2:5080\"")
+            // Debug builds let the tester change the server on the login screen.
+            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:5080\"")
         }
         release {
             // The Phase 2 test client is not available in release builds.
             buildConfigField("String", "DEFAULT_DEV_API_BASE_URL", "\"\"")
+            // Set to https://api.<domain> in Phase 7 (PRD 22). Empty = not configured.
+            buildConfigField("String", "API_BASE_URL", "\"\"")
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             // Release signing uses a private keystore kept outside Git (configured in Phase 7).
@@ -63,6 +67,10 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.kotlinx.serialization)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.tink.android)
 
     testImplementation(libs.junit)
+    testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

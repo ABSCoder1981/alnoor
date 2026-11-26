@@ -4,7 +4,7 @@ Live online Quran classes for one teacher and small groups of students: an Andro
 
 - Requirements: [docs/PRD.md](docs/PRD.md) (approved v1.0) is the source of truth.
 - Engineering rules for contributors and AI assistants: [CLAUDE.md](CLAUDE.md).
-- Status: **Phase 2 – LiveKit proof of concept** (PRD section 26). Decisions: [docs/adr/](docs/adr/), audio tests: [docs/audio-decisions.md](docs/audio-decisions.md).
+- Status: **Phase 3 – accounts, authentication, students and classes** (PRD section 26). Phase 2 recitation tests are still to be run. Decisions: [docs/adr/](docs/adr/), audio tests: [docs/audio-decisions.md](docs/audio-decisions.md).
 
 ## Repository layout
 
@@ -20,32 +20,39 @@ Live online Quran classes for one teacher and small groups of students: an Andro
 | Tool | Version | Notes |
 |---|---|---|
 | .NET SDK | 10.0.404+ (pinned in `backend/global.json`) | `winget install Microsoft.DotNet.SDK.10` |
-| Docker Desktop | latest | Needs WSL2 on Windows (`wsl --install`, then reboot). Runs local PostgreSQL and the database integration tests |
+| PostgreSQL 18 **or** Docker Desktop | 18.x / latest | Either a native install (`winget install PostgreSQL.PostgreSQL.18`) or `docker compose up -d`. Docker needs WSL2 and CPU virtualization enabled in the BIOS; it also runs the LiveKit-server tests |
 | Node.js | 24+ | For `web/` |
 | Android Studio | latest stable | Provides the JDK (`jbr`) and Android SDK; API 37.2 platform is downloaded on first build |
 
 ## First-time setup
 
 ```bash
-# 1. Local settings (never commit .env)
-cp .env.example .env          # then set POSTGRES_PASSWORD to something local
+# 1. Database (choose one)
+#    a) Docker:  cp .env.example .env, set POSTGRES_PASSWORD, then: docker compose up -d
+#    b) Native PostgreSQL 18: create a login role "alnoor" that owns database "alnoor_dev"
+#       (not a superuser) and put its password in .env as POSTGRES_APP_PASSWORD.
 
-# 2. Start PostgreSQL (bound to 127.0.0.1 only)
-docker compose up -d
+# 2. API secrets into dotnet user-secrets (connection string + a generated JWT signing key)
+powershell -ExecutionPolicy Bypass -File scripts/dev-setup.ps1
 
-# 3. Give the API its connection string via user-secrets (not appsettings)
+# 3. Create the database schema
 cd backend
-dotnet user-secrets --project src/ALNoor.Api set "ConnectionStrings:Default" \
-  "Host=localhost;Port=5432;Database=alnoor_dev;Username=alnoor;Password=<your POSTGRES_PASSWORD>"
 dotnet tool restore            # installs dotnet-ef (pinned in backend/dotnet-tools.json)
+dotnet ef database update --project src/ALNoor.Api
 
-# 4. Local LiveKit server (Windows; keep this terminal open). Downloads a pinned, checksum-verified
+# 4. Create the first teacher account (PRD FR-AUTH-11). The password is asked for without echo
+#    (or read from ALNOOR_ADMIN_PASSWORD); never pass it as an argument.
+dotnet run --project src/ALNoor.Api -- seed-teacher --name "Teacher Name" --phone +919800000000
+#    Forgotten teacher password (PRD Q9):
+#    dotnet run --project src/ALNoor.Api -- reset-teacher-password --phone +919800000000
+
+# 5. Local LiveKit server (Windows; keep this terminal open). Downloads a pinned, checksum-verified
 #    livekit-server into .tools/, creates dev keys in .env and stores LiveKit settings in user-secrets.
 cd ..
 powershell -ExecutionPolicy Bypass -File scripts/livekit-dev.ps1
 ```
 
-The API refuses to start without valid `ConnectionStrings:Default` and `LiveKit:*` settings (the LiveKit secret must be at least 32 characters).
+The API refuses to start without valid `ConnectionStrings:Default`, `Jwt:SigningKey` (base64, at least 32 bytes) and `LiveKit:*` settings (the LiveKit secret must be at least 32 characters).
 
 ## Run
 
@@ -54,9 +61,9 @@ The API refuses to start without valid `ConnectionStrings:Default` and `LiveKit:
 | API | `cd backend && dotnet run --project src/ALNoor.Api` (add `--launch-profile lan` so phones on the same Wi-Fi can reach it) | http://localhost:5080/health (DB included), `/health/live` (process only), `/openapi/v1.json` (Development only) |
 | LiveKit (dev) | `scripts/livekit-dev.ps1` | `ws://<PC Wi-Fi IP>:7880` |
 | Web | `cd web && npm install && npm run dev` | http://localhost:5173 – shows whether it can reach the API |
-| Android | Open `android/` in Android Studio and run, or `cd android && ./gradlew assembleDebug` | Debug builds open the Phase 2 LiveKit test client |
+| Android | Open `android/` in Android Studio and run, or `cd android && ./gradlew assembleDebug` | Sign in; debug builds let you set the server address on the login screen and open the Phase 2 LiveKit test room from the home screen |
 
-In development the web app also shows the Phase 2 LiveKit test room (not included in production builds). How to run a recitation test: [docs/audio-decisions.md](docs/audio-decisions.md).
+Teachers sign in on the web app (students use Android). In development it also has the Phase 2 LiveKit test room (not included in production builds). How to run a recitation test: [docs/audio-decisions.md](docs/audio-decisions.md).
 
 The web app reads the API address from `VITE_API_BASE_URL` (see [web/.env.example](web/.env.example)); it defaults to `http://localhost:5080`.
 
@@ -64,7 +71,7 @@ The web app reads the API address from `VITE_API_BASE_URL` (see [web/.env.exampl
 
 | Part | Command |
 |---|---|
-| Backend | `cd backend && dotnet test` – PostgreSQL and LiveKit-server tests use Testcontainers and are **reported as skipped** (not passed) when Docker is not running; in CI they fail instead |
+| Backend | `cd backend && dotnet test`. Database tests use Testcontainers, or a native PostgreSQL when `ALNOOR_TEST_POSTGRES` is set to a connection string for a role with `CREATEDB` (each test class gets its own throwaway database). Tests that cannot run are **reported as skipped** (not passed); in CI they fail instead. LiveKit-server tests need Docker |
 | Web | `cd web && npm test && npm run lint && npm run build` (on Windows, run from a terminal whose path starts with an upper-case `C:`; a lower-case `c:` makes Vitest load twice and fail) |
 | Android | `cd android && ./gradlew testDebugUnitTest` |
 
@@ -74,6 +81,7 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs all three on ever
 
 - Configuration keys follow PRD section 22.3; see [.env.example](.env.example). In environment variables, `__` separates sections (`ConnectionStrings__Default`).
 - Development secrets: `dotnet user-secrets`. Server secrets: a `.env` file readable only by the deploy user. Never in Git, never in the web or Android code.
+- Authentication (PRD 17): 15-minute access tokens (memory only); 30-day rotating refresh tokens, stored hashed on the server, in an HttpOnly SameSite=Strict cookie on the web and encrypted with an Android Keystore key on Android.
 - CORS: only the origins listed in `Cors:AllowedOrigins` (Development: `http://localhost:5173`).
 
 ## Versions

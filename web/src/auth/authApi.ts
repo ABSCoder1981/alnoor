@@ -125,7 +125,13 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
   }
 
   let response = await attempt()
-  if (response.status === 401) {
+  // Only an expired/invalid access token (code UNAUTHENTICATED) is a reason to refresh. Other 401s, such as a
+  // wrong current password when changing it, are returned to the caller unchanged.
+  const code =
+    response.status === 401
+      ? ((await response.clone().json().catch(() => null)) as { code?: string } | null)?.code
+      : undefined
+  if (response.status === 401 && code === 'UNAUTHENTICATED') {
     const user = await refreshSession()
     if (!user) {
       onSessionExpired?.()

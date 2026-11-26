@@ -53,7 +53,7 @@ describe('login', () => {
 describe('apiFetch', () => {
   it('refreshes once on 401 and retries with the new token', async () => {
     fetchMock
-      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(problem(401, { code: 'UNAUTHENTICATED' }))
       .mockResolvedValueOnce(ok({ accessToken: 'access-2', accessTokenExpiresAt: 'x', user }))
       .mockResolvedValueOnce(new Response('[]', { status: 200 }))
 
@@ -68,10 +68,24 @@ describe('apiFetch', () => {
   it('ends the session when refresh fails', async () => {
     const expired = vi.fn()
     setSessionExpiredHandler(expired)
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 401 })).mockResolvedValueOnce(problem(401, { code: 'INVALID_REFRESH_TOKEN' }))
+    fetchMock
+      .mockResolvedValueOnce(problem(401, { code: 'UNAUTHENTICATED' }))
+      .mockResolvedValueOnce(problem(401, { code: 'INVALID_REFRESH_TOKEN' }))
 
     await expect(apiFetch('/api/classes')).rejects.toMatchObject({ status: 401, code: 'UNAUTHENTICATED' })
     expect(expired).toHaveBeenCalledOnce()
+  })
+
+  it('does not refresh for other 401s such as a wrong current password', async () => {
+    const expired = vi.fn()
+    setSessionExpiredHandler(expired)
+    fetchMock.mockResolvedValueOnce(problem(401, { code: 'INVALID_CREDENTIALS', title: 'The current password is incorrect.' }))
+
+    const response = await apiFetch('/api/auth/password', { method: 'PUT' })
+
+    expect(response.status).toBe(401)
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(expired).not.toHaveBeenCalled()
   })
 })
 
