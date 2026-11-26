@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
@@ -14,11 +15,13 @@ let fetchMock: ReturnType<typeof vi.fn>
 
 function renderApp() {
   return render(
-    <MemoryRouter>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </MemoryRouter>,
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <MemoryRouter>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </MemoryRouter>
+    </QueryClientProvider>,
   )
 }
 
@@ -27,6 +30,7 @@ beforeEach(() => {
   routes = {
     '/health': () => new Response('Healthy', { status: 200 }),
     '/api/auth/refresh': () => json(401, { code: 'INVALID_REFRESH_TOKEN' }),
+    '/api/classes': () => json(200, []),
   }
   fetchMock = vi.fn(async (url: string) => {
     const path = new URL(url).pathname

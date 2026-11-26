@@ -35,7 +35,8 @@ public sealed class LiveKitServerFixture : IAsyncLifetime
         try
         {
             _container = new ContainerBuilder(Image)
-                .WithCommand("--dev", "--bind", "0.0.0.0")
+                // Rooms are created only by the API, as in production (no auto-create on join).
+                .WithCommand("--dev", "--bind", "0.0.0.0", "--config-body", "room:\n  auto_create: false")
                 .WithEnvironment("LIVEKIT_KEYS", $"{ApiKey}: {ApiSecret}")
                 .WithPortBinding(HttpPort, assignRandomHostPort: true)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(r => r.ForPort(HttpPort).ForPath("/")))

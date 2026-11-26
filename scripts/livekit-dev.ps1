@@ -99,4 +99,5 @@ Write-Host ""
 
 # Keys go through the environment, not the command line, so they don't show in process listings.
 $env:LIVEKIT_KEYS = "${apiKey}: ${apiSecret}"
-& $Exe --dev --bind 0.0.0.0 --node-ip $NodeIp
+# Rooms are created only by the API (PRD 14.4). Without this, an old token could re-create an ended class's room.
+& $Exe --dev --bind 0.0.0.0 --node-ip $NodeIp --config-body "room:`n  auto_create: false"

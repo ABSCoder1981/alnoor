@@ -530,10 +530,10 @@ sequenceDiagram
 | `canPublishData` | ✗ (no chat in V1) | ✗ |
 | `canUpdateOwnMetadata` | ✗ | ✗ |
 | `roomAdmin`, `roomRecord`, `roomCreate` | ✗ (moderation goes through our backend) | ✗ |
-| Token TTL | 5 min (only needed to *connect*) | 5 min |
+| Token TTL | 60 s (only needed to *connect*) **[PROPOSED 2026-11-26, awaiting owner approval; was 5 min]** | 60 s |
 | Participant attributes/metadata | `{"role":"teacher"}` set by server | `{"role":"student"}` set by server |
 
-Short TTL works because LiveKit keeps connected clients authorised by refreshing the token itself while the connection is alive. For a full reconnect (new connection), the client asks our API for a new token (§20).
+Short TTL works because LiveKit keeps connected clients authorised by refreshing the token itself while the connection is alive. For a full reconnect (new connection), the client asks our API for a new token (§20). Why 60 s rather than 5 min: LiveKit cannot revoke a token, so the lifetime is the window in which a removed or deactivated user could still connect with a token they already hold.
 
 ### 14.4 Room settings
 
@@ -542,7 +542,7 @@ Short TTL works because LiveKit keeps connected clients authorised by refreshing
 | `max_participants` | 10 | LiveKit enforces the hard limit as a second safety net |
 | `empty_timeout` | 600 s | Room closes 10 min after it becomes empty |
 | `departure_timeout` | 60 s | Grace period after last participant leaves |
-| Room created by | Backend on session start | So settings are always ours |
+| Room created by | Backend on session start; **auto-create on join disabled** (`room.auto_create: false`; for LiveKit Cloud, verify the equivalent project setting in Phase 7) | So settings are always ours, and an old token cannot re-create an ended class room |
 
 The backend reserves one slot for the teacher by allowing at most 9 students (FR-LIVE-02).
 

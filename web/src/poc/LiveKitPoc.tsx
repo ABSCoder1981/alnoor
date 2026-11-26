@@ -7,7 +7,7 @@ import {
   defaultAudioSettings,
   describeSettings,
   type AudioTestSettings,
-} from './audioSettings'
+} from '../classroom/audioSettings'
 import { PocRoom } from './PocRoom'
 
 interface Session {

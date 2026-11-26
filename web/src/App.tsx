@@ -2,9 +2,15 @@ import { lazy, Suspense } from 'react'
 import { Link, Navigate, Route, Routes } from 'react-router'
 import { useAuth } from './auth/useAuth'
 import { ChangePasswordPage } from './pages/ChangePasswordPage'
+import { ClassDetailPage, ClassListPage, NewClassPage } from './pages/ClassPages'
+import { DashboardPage } from './pages/DashboardPage'
+import { StudentsPage } from './pages/StudentsPage'
 import { LoginPage } from './pages/LoginPage'
 
 // Phase 2 proof of concept. import.meta.env.DEV is false in production builds, so this code is not bundled there.
+// The classroom (and the LiveKit SDK) loads only when a class is opened, keeping the dashboard light.
+const ClassroomPage = lazy(() => import('./classroom/ClassroomPage').then((m) => ({ default: m.ClassroomPage })))
+
 const LiveKitPoc = import.meta.env.DEV ? lazy(() => import('./poc/LiveKitPoc')) : null
 
 function App() {
@@ -32,6 +38,8 @@ function App() {
         </div>
         <nav aria-label="Main">
           <Link to="/">Home</Link>
+          <Link to="/classes">Classes</Link>
+          <Link to="/students">Students</Link>
           <Link to="/account/password">Password</Link>
           {LiveKitPoc && <Link to="/dev/livekit">LiveKit test</Link>}
           <button type="button" className="secondary" onClick={() => void logout()}>
@@ -44,13 +52,17 @@ function App() {
         <ChangePasswordPage forced />
       ) : (
         <Routes>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/classes" element={<ClassListPage />} />
+          <Route path="/classes/new" element={<NewClassPage />} />
+          <Route path="/classes/:classId" element={<ClassDetailPage />} />
+          <Route path="/students" element={<StudentsPage />} />
           <Route
-            path="/"
+            path="/classroom/:sessionId"
             element={
-              <section className="card">
-                <h2>Welcome</h2>
-                <p>Class and student management arrive in the next screens (Phase 4 dashboards).</p>
-              </section>
+              <Suspense fallback={<p aria-live="polite">Loading classroom…</p>}>
+                <ClassroomPage />
+              </Suspense>
             }
           />
           <Route path="/account/password" element={<ChangePasswordPage forced={false} />} />

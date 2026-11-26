@@ -47,13 +47,13 @@ public sealed class LiveKitTokenServiceTests
     }
 
     [Fact]
-    public void Token_expires_after_five_minutes()
+    public void Token_expires_after_sixty_seconds()
     {
         var result = CreateService("k", Secret).CreateJoinToken(new LiveKitJoinRequest("u", "N", "r", ParticipantRole.Teacher));
 
-        Assert.Equal(Now.AddMinutes(5), result.ExpiresAt);
+        Assert.Equal(Now.AddSeconds(60), result.ExpiresAt);
         var payload = DecodePayload(result.Token);
-        Assert.Equal(Now.AddMinutes(5).ToUnixTimeSeconds(), payload.GetProperty("exp").GetInt64());
+        Assert.Equal(Now.AddSeconds(60).ToUnixTimeSeconds(), payload.GetProperty("exp").GetInt64());
         Assert.Equal(Now.ToUnixTimeSeconds(), payload.GetProperty("nbf").GetInt64());
     }
 
