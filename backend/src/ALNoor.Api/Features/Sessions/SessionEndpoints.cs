@@ -303,6 +303,8 @@ internal static class SessionEndpoints
 
             if (!participant.Microphone.Muted)
             {
+                // Tell the student first so their app can say "The teacher muted you" (FR-LIVE-05).
+                await rooms.SendNoticeAsync(session.RoomName, "muted", [participant.Identity], ct);
                 await rooms.MuteTrackAsync(session.RoomName, participant.Identity, participant.Microphone.Sid, ct);
             }
         }
@@ -334,6 +336,8 @@ internal static class SessionEndpoints
         try
         {
             var teacher = current.Id.ToString();
+            // Everyone sees "The teacher muted everyone" (FR-LIVE-05a); the teacher client ignores it.
+            await rooms.SendNoticeAsync(session.RoomName, "muted_all", [], ct);
             foreach (var p in await rooms.ListParticipantsAsync(session.RoomName, ct))
             {
                 if (p.Identity != teacher && p.Microphone is { Muted: false } mic)

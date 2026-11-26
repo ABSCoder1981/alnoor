@@ -39,6 +39,12 @@ public interface ILiveKitRoomService
 
     /// <summary>Closes the room and disconnects everyone; does nothing if the room no longer exists.</summary>
     Task DeleteRoomAsync(string room, CancellationToken ct);
+
+    /// <summary>
+    /// Sends a small server message (topic "alnoor.moderation") so clients can explain what happened, e.g.
+    /// "The teacher muted you". Clients cannot send data themselves (PRD 14.3). Empty identities = everyone.
+    /// </summary>
+    Task SendNoticeAsync(string room, string type, IReadOnlyList<string> identities, CancellationToken ct);
 }
 
 /// <summary>
@@ -93,6 +99,14 @@ public sealed class LiveKitRoomService(HttpClient http, LiveKitTokenService toke
 
     public Task DeleteRoomAsync(string room, CancellationToken ct) =>
         SendAsync("DeleteRoom", room, new { room }, ignoreNotFound: true, ct);
+
+    public const string NoticeTopic = "alnoor.moderation";
+
+    public Task SendNoticeAsync(string room, string type, IReadOnlyList<string> identities, CancellationToken ct)
+    {
+        var data = Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(new { type }));
+        return SendAsync("SendData", room, new { room, data, kind = "RELIABLE", topic = NoticeTopic, destination_identities = identities }, ignoreNotFound: true, ct);
+    }
 
     private async Task<JsonElement?> SendAsync(string method, string room, object payload, bool ignoreNotFound, CancellationToken ct)
     {

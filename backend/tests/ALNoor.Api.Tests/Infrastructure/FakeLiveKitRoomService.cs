@@ -94,6 +94,12 @@ public sealed class FakeLiveKitRoomService : ILiveKitRoomService
         return Task.CompletedTask;
     }
 
+    public Task SendNoticeAsync(string room, string type, IReadOnlyList<string> identities, CancellationToken ct)
+    {
+        Check($"Notice {room} {type} [{string.Join(",", identities)}]");
+        return Task.CompletedTask;
+    }
+
     public Task DeleteRoomAsync(string room, CancellationToken ct)
     {
         Check($"DeleteRoom {room}");

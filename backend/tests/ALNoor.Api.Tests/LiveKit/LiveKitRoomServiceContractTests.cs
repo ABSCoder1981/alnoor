@@ -30,6 +30,7 @@ public sealed class LiveKitRoomServiceContractTests(LiveKitServerFixture server)
 
         await rooms.CreateRoomAsync(room, Ct);
         Assert.Empty(await rooms.ListParticipantsAsync(room, Ct));
+        await rooms.SendNoticeAsync(room, "muted_all", [], Ct); // SendData accepted by the server.
 
         await rooms.RemoveParticipantAsync(room, Guid.NewGuid().ToString(), Ct); // Absent participant: no error.
         await rooms.DeleteRoomAsync(room, Ct);

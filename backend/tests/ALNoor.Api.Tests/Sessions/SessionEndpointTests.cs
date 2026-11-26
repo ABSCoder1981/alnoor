@@ -256,6 +256,7 @@ public sealed class SessionEndpointTests(DatabaseApiFixture fx) : IClassFixture<
         using var mute = await s.Teacher.PostAsync($"/api/sessions/{sessionId}/participants/{s.Students[0].Id}/mute", null, Ct);
         Assert.Equal(HttpStatusCode.NoContent, mute.StatusCode);
         Assert.True(fx.Api.Rooms.Participants(room).Single(p => p.Identity == s.Students[0].Id.ToString()).Microphone!.Muted);
+        Assert.Contains($"Notice {room} muted [{s.Students[0].Id}]", fx.Api.Rooms.Calls); // "The teacher muted you"
 
         using var noMic = await s.Teacher.PostAsync($"/api/sessions/{sessionId}/participants/{s.Students[2].Id}/mute", null, Ct);
         Assert.Equal("NO_MICROPHONE_TRACK", (await BodyAsync(noMic)).GetProperty("code").GetString());
@@ -269,6 +270,7 @@ public sealed class SessionEndpointTests(DatabaseApiFixture fx) : IClassFixture<
         // Mute all: only students with a live mic (S1), never the teacher.
         using var all = await s.Teacher.PostAsync($"/api/sessions/{sessionId}/participants/mute-all", null, Ct);
         Assert.Equal(1, (await BodyAsync(all)).GetProperty("mutedCount").GetInt32());
+        Assert.Contains($"Notice {room} muted_all []", fx.Api.Rooms.Calls); // "The teacher muted everyone"
         Assert.False(fx.Api.Rooms.Participants(room).Single(p => p.Identity == s.TeacherId.ToString()).Microphone!.Muted);
 
         using var remove = await s.Teacher.PostAsJsonAsync($"/api/sessions/{sessionId}/participants/{s.Students[1].Id}/remove", new { }, Ct);
