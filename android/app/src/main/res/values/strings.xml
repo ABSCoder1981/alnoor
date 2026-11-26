@@ -60,4 +60,130 @@
     <string name="home_sign_out">Sign out</string>
     <string name="home_livekit_test">LiveKit test room (development)</string>
     <string name="back">Back</string>
+
+    <!-- Common -->
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="saving">Saving…</string>
+    <string name="done">Done</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="error_forbidden">You are not allowed to do this.</string>
+    <string name="error_not_found">Not found. It may have been removed.</string>
+    <string name="error_rtc_unavailable">The live classroom service is not available. Try again in a moment.</string>
+    <string name="empty_classes_teacher">No classes yet. Create your first class.</string>
+    <string name="empty_classes_student">You are not in any class yet. Ask your teacher to add you.</string>
+
+    <!-- Home / dashboards (PRD 11.2 screens 3–4) -->
+    <string name="home_hello">Assalamu alaikum, %1$s</string>
+    <string name="home_live_banner">%1$s is live</string>
+    <string name="home_return_to_class">Return to class</string>
+    <string name="home_your_classes">Your classes</string>
+    <string name="home_next">Next: %1$s</string>
+    <string name="home_no_schedule">No weekly time set</string>
+    <plurals name="students_count">
+        <item quantity="one">%d student</item>
+        <item quantity="other">%d students</item>
+    </plurals>
+    <string name="home_start">Start class</string>
+    <string name="home_starting">Starting…</string>
+    <string name="home_join">Class is live – Join</string>
+    <string name="home_waiting">Waiting for teacher</string>
+    <string name="nav_classes">Classes</string>
+    <string name="nav_students">Students</string>
+    <string name="nav_new_class">New class</string>
+
+    <!-- Classes (PRD 11.2 screens 5–6) -->
+    <string name="class_schedule">Weekly times</string>
+    <string name="class_no_schedule">None</string>
+    <string name="class_time_zone">Time zone: %1$s</string>
+    <string name="class_students_title">Students (%1$d/%2$d)</string>
+    <string name="class_no_students">No students enrolled yet.</string>
+    <string name="class_add_students">Add students</string>
+    <string name="class_add_selected">Add selected</string>
+    <string name="class_full">This class is full.</string>
+    <string name="class_no_available">No other active students. Add a student first.</string>
+    <string name="class_remove_student_title">Remove %1$s from this class?</string>
+    <string name="class_remove_student_body">They will no longer see this class. If it is live, they are disconnected.</string>
+    <string name="remove">Remove</string>
+    <string name="edit">Edit</string>
+    <string name="class_archive">Archive class</string>
+    <string name="class_reactivate">Reactivate class</string>
+    <string name="class_archive_confirm">Archive this class? Students will no longer see it.</string>
+    <string name="class_archived">Archived</string>
+    <string name="class_edit_title">Edit class</string>
+    <string name="class_new_title">New class</string>
+    <string name="class_title">Title</string>
+    <string name="class_description">Description (optional)</string>
+    <string name="class_tz">Time zone (e.g. Asia/Kolkata)</string>
+    <string name="class_duration">Usual length (minutes)</string>
+    <string name="class_add_time">Add weekly time</string>
+    <string name="class_slot_time">Start (HH:mm)</string>
+    <string name="class_slot_minutes">Minutes</string>
+    <string name="class_error_title">The title must be 2–100 characters.</string>
+    <string name="class_error_time">Use 24-hour time, e.g. 17:00.</string>
+    <string name="class_error_duration">Lengths must be 10–180 minutes.</string>
+    <string-array name="day_names">
+        <item>Sunday</item>
+        <item>Monday</item>
+        <item>Tuesday</item>
+        <item>Wednesday</item>
+        <item>Thursday</item>
+        <item>Friday</item>
+        <item>Saturday</item>
+    </string-array>
+
+    <!-- Students (PRD 11.2 screen 7) -->
+    <string name="students_search">Search by name or phone</string>
+    <string name="students_add">Add student</string>
+    <string name="students_full_name">Full name</string>
+    <string name="students_phone_hint">Their own number; used to sign in</string>
+    <string name="students_deactivated">Deactivated</string>
+    <string name="students_temporary">Temporary password</string>
+    <string name="students_reset">Reset password</string>
+    <string name="students_deactivate">Deactivate</string>
+    <string name="students_activate">Activate</string>
+    <string name="students_deactivate_body">They are signed out everywhere, cannot sign in or join classes, and are removed from any live class.</string>
+    <string name="students_reset_body">A new temporary password is created and shown once. They must choose their own password at next sign-in.</string>
+    <string name="students_temp_title">Temporary password for %1$s</string>
+    <string name="students_temp_body">Share it privately with the student or their parent. It is shown only now.</string>
+    <string name="students_edit_phone">Phone (with country code, e.g. +919800000000)</string>
+    <string name="students_error_name">Enter the full name (at least 2 characters).</string>
+    <string name="students_empty">No students yet.</string>
+
+    <!-- Classroom (PRD 11.2 screens 9–12) -->
+    <string name="classroom_joining">Joining…</string>
+    <string name="classroom_connected">Connected</string>
+    <string name="classroom_reconnecting">Reconnecting…</string>
+    <string name="classroom_mic_on">Mic on</string>
+    <string name="classroom_mic_off">Mic off</string>
+    <string name="classroom_camera_on">Camera on</string>
+    <string name="classroom_camera_off">Camera off</string>
+    <string name="classroom_audio_only">Audio only</string>
+    <string name="classroom_participants">Participants (%1$d)</string>
+    <string name="classroom_leave">Leave</string>
+    <string name="classroom_end">End class</string>
+    <string name="classroom_end_confirm">End the class for everyone?</string>
+    <string name="classroom_mute">Mute</string>
+    <string name="classroom_unmute">Unmute</string>
+    <string name="classroom_mute_all">Mute all</string>
+    <string name="classroom_mute_all_confirm">Mute all students? They can unmute themselves.</string>
+    <string name="classroom_remove_confirm">Remove %1$s? They cannot rejoin this session.</string>
+    <string name="classroom_teacher">Teacher</string>
+    <string name="classroom_you">(you)</string>
+    <string name="classroom_teacher_not_here">The teacher is not connected.</string>
+    <string name="classroom_muted_by_teacher">The teacher muted you. Tap Mic to unmute when asked.</string>
+    <string name="classroom_muted_everyone">The teacher muted everyone. Tap Mic to unmute when asked.</string>
+    <string name="classroom_mic_permission">Microphone permission is needed to take part. Allow it in Settings &gt; Apps &gt; ALNoor &gt; Permissions.</string>
+    <string name="classroom_mic_explain">The microphone is needed so your teacher can hear your recitation.</string>
+    <string name="classroom_ended_title">Class ended</string>
+    <string name="classroom_ended_body">The class has ended.</string>
+    <string name="classroom_removed_body">The teacher removed you from this class. You can join the next one.</string>
+    <string name="classroom_left_body">You left the class. You can rejoin while it is live.</string>
+    <string name="classroom_lost_body">The connection was lost. Check your internet and rejoin.</string>
+    <string name="classroom_duration">You were in class for %1$d min.</string>
+    <string name="classroom_back">Back to dashboard</string>
+    <string name="classroom_rejoin">Rejoin</string>
+    <string name="notification_channel_classroom">Live class</string>
+    <string name="notification_class_title">%1$s – class in progress</string>
+    <string name="notification_class_text">Tap to return to the class</string>
 </resources>

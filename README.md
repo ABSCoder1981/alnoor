@@ -4,7 +4,7 @@ Live online Quran classes for one teacher and small groups of students: an Andro
 
 - Requirements: [docs/PRD.md](docs/PRD.md) (approved v1.0) is the source of truth.
 - Engineering rules for contributors and AI assistants: [CLAUDE.md](CLAUDE.md).
-- Status: **Phase 3 – accounts, authentication, students and classes** (PRD section 26). Phase 2 recitation tests are still to be run. Decisions: [docs/adr/](docs/adr/), audio tests: [docs/audio-decisions.md](docs/audio-decisions.md).
+- Status: **Phase 4 – live classroom: teacher dashboard, class and student management, starting, joining and ending classes, moderation** (PRD section 26). Webhooks, attendance and automatic class end follow in Phase 5. Phase 2 recitation tests are still to be run. Decisions: [docs/adr/](docs/adr/), audio tests: [docs/audio-decisions.md](docs/audio-decisions.md).
 
 ## Repository layout
 
@@ -61,9 +61,9 @@ The API refuses to start without valid `ConnectionStrings:Default`, `Jwt:Signing
 | API | `cd backend && dotnet run --project src/ALNoor.Api` (add `--launch-profile lan` so phones on the same Wi-Fi can reach it) | http://localhost:5080/health (DB included), `/health/live` (process only), `/openapi/v1.json` (Development only) |
 | LiveKit (dev) | `scripts/livekit-dev.ps1` | `ws://<PC Wi-Fi IP>:7880` |
 | Web | `cd web && npm install && npm run dev` | http://localhost:5173 – shows whether it can reach the API |
-| Android | Open `android/` in Android Studio and run, or `cd android && ./gradlew assembleDebug` | Sign in; debug builds let you set the server address on the login screen and open the Phase 2 LiveKit test room from the home screen |
+| Android | Open `android/` in Android Studio and run, or `cd android && ./gradlew assembleDebug` | Students and teachers sign in, see their classes and join a live class (a foreground notification keeps the microphone working with the screen off); teachers can also manage classes and students and moderate. Debug builds let you set the server address on the login screen and open the Phase 2 LiveKit test room |
 
-Teachers sign in on the web app (students use Android). In development it also has the Phase 2 LiveKit test room (not included in production builds). How to run a recitation test: [docs/audio-decisions.md](docs/audio-decisions.md).
+Teachers use the web app (or Android); students use Android. A class can be joined only after its teacher has started it, and only the API creates LiveKit rooms (`room.auto_create: false`). In development it also has the Phase 2 LiveKit test room (not included in production builds). How to run a recitation test: [docs/audio-decisions.md](docs/audio-decisions.md).
 
 The web app reads the API address from `VITE_API_BASE_URL` (see [web/.env.example](web/.env.example)); it defaults to `http://localhost:5080`.
 

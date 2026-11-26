@@ -3,14 +3,17 @@ package com.alnoor.app
 import android.app.Application
 import android.content.Context
 import android.os.Build
+import com.alnoor.app.data.api.AlNoorApi
 import com.alnoor.app.data.auth.AuthRepository
 import com.alnoor.app.data.auth.EncryptedRefreshTokenStore
+import com.alnoor.app.livekit.ClassroomManager
+import com.alnoor.app.livekit.ClassroomService
 
 /**
  * Manual dependency container (one instance per process). Kept deliberately small; see docs/adr/0002 for why
  * Hilt is not used yet.
  */
-class AppContainer(context: Context) {
+class AppContainer(context: Context, application: Application) {
     private val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
     /** Debug builds let testers point the app at a PC on the same Wi-Fi; release builds use the built-in address. */
@@ -26,6 +29,11 @@ class AppContainer(context: Context) {
         deviceInfo = "${Build.MANUFACTURER} ${Build.MODEL} / Android ${Build.VERSION.RELEASE}".take(100),
     )
 
+    /** Protected API calls share the authenticated client (bearer token + refresh on 401). */
+    val api = AlNoorApi(baseUrl = { apiBaseUrl }, client = auth.authenticatedClient)
+
+    val classroom = ClassroomManager(application, api)
+
     private companion object {
         const val KEY_API_URL = "api_base_url"
     }
@@ -37,6 +45,7 @@ class ALNoorApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        container = AppContainer(this)
+        container = AppContainer(this, this)
+        ClassroomService.createChannel(this)
     }
 }

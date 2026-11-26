@@ -49,12 +49,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alnoor.app.BuildConfig
 import com.alnoor.app.R
-import com.alnoor.app.data.auth.AuthUser
-import com.alnoor.app.ui.poc.PocScreen
+import com.alnoor.app.AppContainer
+import com.alnoor.app.ui.AppNav
 
 /** Root of the app: splash -> login -> (forced password change) -> home (PRD 11.2 screens 1, 2, 2a). */
 @Composable
-fun AuthRoot(viewModel: AuthViewModel) {
+fun AuthRoot(viewModel: AuthViewModel, container: AppContainer) {
     val session by viewModel.session.collectAsStateWithLifecycle()
     Scaffold { padding ->
         Box(Modifier.padding(padding).imePadding()) {
@@ -67,7 +67,7 @@ fun AuthRoot(viewModel: AuthViewModel) {
                 is SessionState.SignedOut -> LoginScreen(viewModel, s.notice)
                 is SessionState.SignedIn ->
                     if (s.user.mustChangePassword) ChangePasswordScreen(viewModel, forced = true, onDone = {})
-                    else HomeScreen(s.user, viewModel)
+                    else AppNav(s.user, container, viewModel)
             }
         }
     }
@@ -188,7 +188,7 @@ private fun LoginScreen(viewModel: AuthViewModel, notice: UiText?) {
 }
 
 @Composable
-private fun ChangePasswordScreen(viewModel: AuthViewModel, forced: Boolean, onDone: () -> Unit) {
+internal fun ChangePasswordScreen(viewModel: AuthViewModel, forced: Boolean, onDone: () -> Unit) {
     val form by viewModel.password.collectAsStateWithLifecycle()
 
     Column(
@@ -236,42 +236,4 @@ private fun PasswordField(value: String, label: Int, vararg args: Any, onChange:
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
         modifier = Modifier.fillMaxWidth(),
     )
-}
-
-private enum class HomeView { Home, Password, LiveKitTest }
-
-/** Placeholder until the Phase 4 dashboards (PRD 11.2 screens 3-4). */
-@Composable
-private fun HomeScreen(user: AuthUser, viewModel: AuthViewModel) {
-    var view by rememberSaveable { mutableStateOf(HomeView.Home) }
-    when (view) {
-        HomeView.Password -> ChangePasswordScreen(viewModel, forced = false, onDone = {
-            viewModel.resetPasswordForm()
-            view = HomeView.Home
-        })
-        HomeView.LiveKitTest -> Column {
-            TextButton(onClick = { view = HomeView.Home }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.back)) }
-            PocScreen()
-        }
-        HomeView.Home -> Column(
-            Modifier.fillMaxSize().padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
-            Text(stringResource(R.string.home_signed_in_as, user.fullName), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(if (user.isTeacher) R.string.home_role_teacher else R.string.home_role_student))
-            Text(stringResource(R.string.home_placeholder), modifier = Modifier.padding(vertical = 16.dp))
-            OutlinedButton(onClick = { view = HomeView.Password }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                Text(stringResource(R.string.home_change_password))
-            }
-            if (BuildConfig.DEBUG) {
-                OutlinedButton(onClick = { view = HomeView.LiveKitTest }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                    Text(stringResource(R.string.home_livekit_test))
-                }
-            }
-            Button(onClick = viewModel::logout, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                Text(stringResource(R.string.home_sign_out))
-            }
-        }
-    }
 }

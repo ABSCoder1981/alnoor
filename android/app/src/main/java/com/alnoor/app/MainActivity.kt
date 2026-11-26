@@ -19,7 +19,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ALNoorTheme {
-                AuthRoot(authViewModel)
+                AuthRoot(authViewModel, (application as ALNoorApplication).container)
             }
         }
     }
