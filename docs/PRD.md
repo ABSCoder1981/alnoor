@@ -285,7 +285,7 @@ sequenceDiagram
     API-->>T: 201/200 { sessionId, status: Live }
     T->>API: POST /api/sessions/{id}/join
     API->>DB: Validate teacher, session Live, capacity
-    API-->>T: { livekitUrl, token (TTL 5 min), grants: teacher }
+    API-->>T: { livekitUrl, token (TTL 60 s), grants: teacher }
     T->>LK: Connect (WebRTC) with token
     LK-->>T: Connected
     T->>LK: Publish microphone (mic ON for teacher)
@@ -314,7 +314,7 @@ sequenceDiagram
         API-->>S: 403/409 ProblemDetails (reason code)
         S->>S: Show friendly message
     else all OK
-        API-->>S: { livekitUrl, token (TTL 5 min), grants: student }
+        API-->>S: { livekitUrl, token (TTL 60 s), grants: student }
         S->>S: Start foreground service (microphone)
         S->>LK: Connect with token (mic muted, camera off)
         LK-->>S: Connected, subscribe to teacher + students audio
@@ -510,7 +510,7 @@ sequenceDiagram
     API->>DB: Blocked from this session?
     API->>LK: ListParticipants(room)
     API->>API: Students connected < 9 (teacher always allowed)
-    API->>API: Build LiveKit JWT: iss=API key, sub=userId, name, video grant {roomJoin, room, canPublish, canPublishSources, canSubscribe, canPublishData=false}, exp = now + 5 min
+    API->>API: Build LiveKit JWT: iss=API key, sub=userId, name, video grant {roomJoin, room, canPublish, canPublishSources, canSubscribe, canPublishData=false}, exp = now + 60 s
     API->>API: Sign with LiveKit API secret (server only)
     API->>DB: Audit log "token issued"
     API-->>C: { url, token, role, expiresAt }
@@ -530,7 +530,7 @@ sequenceDiagram
 | `canPublishData` | ✗ (no chat in V1) | ✗ |
 | `canUpdateOwnMetadata` | ✗ | ✗ |
 | `roomAdmin`, `roomRecord`, `roomCreate` | ✗ (moderation goes through our backend) | ✗ |
-| Token TTL | 60 s (only needed to *connect*) **[PROPOSED 2026-11-26, awaiting owner approval; was 5 min]** | 60 s |
+| Token TTL | 60 s (only needed to *connect*) (approved by the owner 2026-11-26; was 5 min) | 60 s |
 | Participant attributes/metadata | `{"role":"teacher"}` set by server | `{"role":"student"}` set by server |
 
 Short TTL works because LiveKit keeps connected clients authorised by refreshing the token itself while the connection is alive. For a full reconnect (new connection), the client asks our API for a new token (§20). Why 60 s rather than 5 min: LiveKit cannot revoke a token, so the lifetime is the window in which a removed or deactivated user could still connect with a token they already hold.
@@ -939,7 +939,7 @@ Content type `application/webhook+json`. Read raw body; verify `Authorization` J
 |---|---|---|---|
 | Access token | JWT, HS256 (secret ≥ 256 bits) or RS256; claims `sub` (user id), `tid` (tenant), `role`, `jti`, `exp` | 15 min | Android: memory; Web: memory |
 | Refresh token | Random 32 bytes, base64url | 30 days, sliding via rotation | Android: DataStore encrypted with Keystore key; Web: HttpOnly Secure SameSite=Strict cookie on `api.` domain; Server: SHA-256 hash |
-| LiveKit token | JWT signed with LiveKit secret | 5 min | Not stored |
+| LiveKit token | JWT signed with LiveKit secret | 60 s | Not stored |
 
 The `role` claim in the access token is only a hint for the UI. Every protected API re-checks the user's role, `IsActive` and ownership from the database (a cached lookup of ≤ 30 s is acceptable).
 
@@ -1098,7 +1098,7 @@ stateDiagram-v2
 |---|---|
 | Transport | HTTPS only (TLS 1.2+), HSTS on API and web; Android `networkSecurityConfig` blocks cleartext |
 | Passwords | PBKDF2 (Identity hasher) or Argon2id; never logged |
-| Tokens | Short access tokens; rotating hashed refresh tokens with reuse detection; LiveKit tokens 5 min |
+| Tokens | Short access tokens; rotating hashed refresh tokens with reuse detection; LiveKit join tokens 60 s |
 | Server-side checks | Role, ownership, enrollment, session state, capacity re-checked on every request |
 | Webhooks | Signature + body-hash verification; idempotent processing |
 | Rate limiting | Auth endpoints (§17.3); join endpoint 20/min per user |

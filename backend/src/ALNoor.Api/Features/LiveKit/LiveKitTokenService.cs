@@ -28,7 +28,7 @@ public sealed class LiveKitTokenService(IOptions<LiveKitOptions> options, TimePr
 {
     /// <summary>
     /// Only needed to connect; LiveKit keeps a connected client authorised and a full reconnect asks our API again
-    /// (PRD 14.3). 60 s instead of the PRD's 5 min: LiveKit cannot revoke a token, so a short lifetime limits how long
+    /// (PRD 14.3). 60 s (approved 2026-11-26): LiveKit cannot revoke a token, so a short lifetime limits how long
     /// a removed or deactivated user could reuse a token they already hold.
     /// </summary>
     public static readonly TimeSpan JoinTokenLifetime = TimeSpan.FromSeconds(60);
