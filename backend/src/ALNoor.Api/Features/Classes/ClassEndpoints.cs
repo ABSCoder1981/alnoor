@@ -1,3 +1,4 @@
+using ALNoor.Api.Features.Sessions;
 using ALNoor.Api.Shared.Audit;
 using ALNoor.Api.Shared.Data;
 using ALNoor.Api.Shared.Security;
@@ -29,7 +30,7 @@ internal static class ClassEndpoints
     }
 
     /// <summary>Classes this user may see: the teacher's own, or (students) active classes with an active enrollment.</summary>
-    private static IQueryable<Class> Visible(AlNoorDbContext db, User user) =>
+    internal static IQueryable<Class> Visible(AlNoorDbContext db, User user) =>
         user.Role == UserRole.Teacher
             ? db.Classes.Where(c => c.TeacherId == user.Id)
             : db.Classes.Where(c => c.IsActive && c.Enrollments.Any(e => e.StudentId == user.Id && e.EnrollmentStatus == EnrollmentStatus.Active));
@@ -51,12 +52,13 @@ internal static class ClassEndpoints
                 c.Schedule,
                 Teacher = new TeacherRef(c.Teacher!.Id, c.Teacher.FullName),
                 StudentCount = c.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active),
+                LiveSessionId = db.ClassSessions.Where(s => s.ClassId == c.Id && s.Status == SessionStatus.Live).Select(s => (Guid?)s.Id).FirstOrDefault(),
             })
             .AsNoTracking()
             .ToListAsync(ct);
 
         var now = time.GetUtcNow();
-        return rows.Select(r => ToDto(r.Class, r.Schedule, r.Teacher, r.StudentCount, students: null, now)).ToList();
+        return rows.Select(r => ToDto(r.Class, r.Schedule, r.Teacher, r.StudentCount, r.LiveSessionId, students: null, now)).ToList();
     }
 
     private static async Task<IResult> GetAsync(Guid id, AlNoorDbContext db, CurrentUser current, TimeProvider time, CancellationToken ct)
@@ -75,6 +77,7 @@ internal static class ClassEndpoints
                 c.Schedule,
                 Teacher = new TeacherRef(c.Teacher!.Id, c.Teacher.FullName),
                 StudentCount = c.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active),
+                LiveSessionId = db.ClassSessions.Where(s => s.ClassId == c.Id && s.Status == SessionStatus.Live).Select(s => (Guid?)s.Id).FirstOrDefault(),
             })
             .AsNoTracking()
             .SingleOrDefaultAsync(ct);
@@ -94,7 +97,7 @@ internal static class ClassEndpoints
                 .ToListAsync(ct);
         }
 
-        return ToDto(row.Class, row.Schedule, row.Teacher, row.StudentCount, students, now);
+        return ToDto(row.Class, row.Schedule, row.Teacher, row.StudentCount, row.LiveSessionId, students, now);
     }
 
     private static async Task<IResult> CreateAsync(
@@ -143,7 +146,12 @@ internal static class ClassEndpoints
             return problem;
         }
 
-        // Phase 4: return 409 when deactivating a class with a live session (PRD 16.4).
+        if (request.IsActive == false && cls.IsActive
+            && await db.ClassSessions.AnyAsync(s => s.ClassId == id && s.Status == SessionStatus.Live, ct))
+        {
+            return Problems.Conflict("SESSION_LIVE", "End the live class before archiving it.");
+        }
+
         cls.Title = request.Title.Trim();
         cls.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
         cls.TimeZoneId = request.TimeZoneId;
@@ -236,7 +244,7 @@ internal static class ClassEndpoints
     }
 
     private static async Task<IResult> UnenrollAsync(
-        Guid id, Guid studentId, AlNoorDbContext db, CurrentUser current, AuditLogger audit, TimeProvider time, CancellationToken ct)
+        Guid id, Guid studentId, AlNoorDbContext db, CurrentUser current, LiveRoomCleanup liveRooms, AuditLogger audit, TimeProvider time, CancellationToken ct)
     {
         if (!await db.Classes.AnyAsync(c => c.Id == id && c.TeacherId == current.Id, ct))
         {
@@ -254,8 +262,8 @@ internal static class ClassEndpoints
             enrollment.EnrollmentStatus = EnrollmentStatus.Removed;
             enrollment.RemovedAt = time.GetUtcNow();
             audit.Add(AuditActions.EnrollmentRemoved, current.Id, nameof(Class), id, new { studentId });
-            // Phase 4: also remove the student from the live room, if any (PRD 16.4).
             await db.SaveChangesAsync(ct);
+            await liveRooms.RemoveFromLiveRoomsAsync(studentId, onlyClassId: id, ct); // PRD 16.4
         }
 
         return TypedResults.NoContent();
@@ -291,7 +299,7 @@ internal static class ClassEndpoints
     private static List<ClassSchedule> ToEntities(List<ScheduleSlot> slots) =>
         slots.Select(s => new ClassSchedule { DayOfWeek = (short)s.DayOfWeek, StartTimeLocal = s.StartTimeLocal, DurationMinutes = s.DurationMinutes }).ToList();
 
-    private static ClassDto ToDto(Class c, List<ClassSchedule> schedule, TeacherRef teacher, int studentCount, List<EnrolledStudentDto>? students, DateTimeOffset now)
+    private static ClassDto ToDto(Class c, List<ClassSchedule> schedule, TeacherRef teacher, int studentCount, Guid? liveSessionId, List<EnrolledStudentDto>? students, DateTimeOffset now)
     {
         var ordered = schedule.OrderBy(s => s.DayOfWeek).ThenBy(s => s.StartTimeLocal).ToList();
         var slots = ordered.Select(s => new ScheduleSlot(s.DayOfWeek, s.StartTimeLocal, s.DurationMinutes)).ToList();
@@ -303,7 +311,7 @@ internal static class ClassEndpoints
             ordered.Select(s => new ScheduleEntryDto(s.DayOfWeek, ScheduleCalculator.FormatTime(s.StartTimeLocal), s.DurationMinutes)).ToList(),
             next,
             studentCount,
-            LiveSessionId: null, // Sessions arrive in Phase 4.
+            liveSessionId,
             teacher,
             students);
     }

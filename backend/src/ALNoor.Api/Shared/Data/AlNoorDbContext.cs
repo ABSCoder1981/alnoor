@@ -18,6 +18,8 @@ public sealed class AlNoorDbContext(DbContextOptions<AlNoorDbContext> options, T
     public DbSet<Class> Classes => Set<Class>();
     public DbSet<ClassSchedule> ClassSchedules => Set<ClassSchedule>();
     public DbSet<ClassStudent> ClassStudents => Set<ClassStudent>();
+    public DbSet<ClassSession> ClassSessions => Set<ClassSession>();
+    public DbSet<SessionParticipantBlock> SessionParticipantBlocks => Set<SessionParticipantBlock>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -108,6 +110,36 @@ public sealed class AlNoorDbContext(DbContextOptions<AlNoorDbContext> options, T
             e.HasOne(x => x.Student).WithMany().HasForeignKey(x => x.StudentId).OnDelete(DeleteBehavior.Restrict);
             e.ToTable(t => t.HasCheckConstraint("CK_ClassStudents_Status", "\"EnrollmentStatus\" IN ('Active','Removed')"));
             e.HasQueryFilter(x => Classes.Any(c => c.Id == x.ClassId));
+        });
+
+        modelBuilder.Entity<ClassSession>(e =>
+        {
+            e.Property(x => x.RoomName).HasMaxLength(64);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.EndReason).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Version).IsRowVersion();
+            e.HasIndex(x => x.RoomName).IsUnique();
+            // One live session per class (PRD 15.3, FR-SES-02), enforced by the database.
+            e.HasIndex(x => x.ClassId).IsUnique().HasFilter("\"Status\" = 'Live'").HasDatabaseName("IX_ClassSessions_ClassId_Live");
+            e.HasIndex(x => new { x.ClassId, x.StartedAt }).IsDescending(false, true);
+            e.HasOne(x => x.Class).WithMany().HasForeignKey(x => x.ClassId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.StartedByUserId).OnDelete(DeleteBehavior.Restrict);
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_ClassSessions_Status", "\"Status\" IN ('Live','Ended')");
+                t.HasCheckConstraint("CK_ClassSessions_EndReason", "\"EndReason\" IS NULL OR \"EndReason\" IN ('Teacher','Timeout','System')");
+            });
+            e.HasQueryFilter(x => Classes.Any(c => c.Id == x.ClassId));
+        });
+
+        modelBuilder.Entity<SessionParticipantBlock>(e =>
+        {
+            e.Property(x => x.Reason).HasMaxLength(200);
+            e.HasIndex(x => new { x.SessionId, x.UserId }).IsUnique();
+            e.HasOne<ClassSession>().WithMany().HasForeignKey(x => x.SessionId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.BlockedByUserId).OnDelete(DeleteBehavior.Restrict);
+            e.HasQueryFilter(x => ClassSessions.Any(s => s.Id == x.SessionId));
         });
     }
 }

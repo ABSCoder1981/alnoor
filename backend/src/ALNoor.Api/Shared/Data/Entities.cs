@@ -135,3 +135,45 @@ public sealed class ClassStudent
     public DateTimeOffset EnrolledAt { get; set; }
     public DateTimeOffset? RemovedAt { get; set; }
 }
+
+public enum SessionStatus
+{
+    Live,
+    Ended,
+}
+
+public enum SessionEndReason
+{
+    Teacher,
+    Timeout,
+    System,
+}
+
+/// <summary>One live occurrence of a class (PRD C2: created when the teacher taps Start).</summary>
+public sealed class ClassSession
+{
+    public Guid Id { get; set; } = Guid.CreateVersion7();
+    public Guid ClassId { get; set; }
+    public Class? Class { get; set; }
+
+    /// <summary>Random LiveKit room name, e.g. s_9f2c…; never contains personal data (PRD 21.1).</summary>
+    public required string RoomName { get; set; }
+
+    public SessionStatus Status { get; set; } = SessionStatus.Live;
+    public DateTimeOffset StartedAt { get; set; }
+    public DateTimeOffset? EndedAt { get; set; }
+    public Guid StartedByUserId { get; set; }
+    public SessionEndReason? EndReason { get; set; }
+    public uint Version { get; set; }
+}
+
+/// <summary>A participant removed by the teacher cannot rejoin that session (PRD M9 / Q7).</summary>
+public sealed class SessionParticipantBlock
+{
+    public Guid Id { get; set; } = Guid.CreateVersion7();
+    public Guid SessionId { get; set; }
+    public Guid UserId { get; set; }
+    public Guid BlockedByUserId { get; set; }
+    public string? Reason { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}

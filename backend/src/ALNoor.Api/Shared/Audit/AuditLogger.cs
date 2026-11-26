@@ -46,4 +46,10 @@ public static class AuditActions
     public const string ClassUpdated = "class.updated";
     public const string EnrollmentAdded = "enrollment.added";
     public const string EnrollmentRemoved = "enrollment.removed";
+    public const string SessionStarted = "session.started";
+    public const string SessionEnded = "session.ended";
+    public const string SessionTokenIssued = "session.token_issued";
+    public const string ParticipantMuted = "session.participant_muted";
+    public const string ParticipantsMutedAll = "session.participants_muted_all";
+    public const string ParticipantRemoved = "session.participant_removed";
 }

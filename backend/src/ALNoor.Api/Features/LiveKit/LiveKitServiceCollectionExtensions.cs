@@ -14,6 +14,7 @@ internal static class LiveKitServiceCollectionExtensions
             .ValidateOnStart();
 
         services.AddSingleton<LiveKitTokenService>();
+        services.AddHttpClient<ILiveKitRoomService, LiveKitRoomService>(client => client.Timeout = TimeSpan.FromSeconds(10));
         return services;
     }
 }

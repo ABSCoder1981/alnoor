@@ -71,7 +71,7 @@ The web app reads the API address from `VITE_API_BASE_URL` (see [web/.env.exampl
 
 | Part | Command |
 |---|---|
-| Backend | `cd backend && dotnet test`. Database tests use Testcontainers, or a native PostgreSQL when `ALNOOR_TEST_POSTGRES` is set to a connection string for a role with `CREATEDB` (each test class gets its own throwaway database). Tests that cannot run are **reported as skipped** (not passed); in CI they fail instead. LiveKit-server tests need Docker |
+| Backend | `cd backend && dotnet test`. Database tests use Testcontainers, or a native PostgreSQL when `ALNOOR_TEST_POSTGRES` is set to a connection string for a role with `CREATEDB` (each test class gets its own throwaway database). Tests that cannot run are **reported as skipped** (not passed); in CI they fail instead. LiveKit-server tests use Docker, or a running `livekit-server` when `ALNOOR_TEST_LIVEKIT` is set to its http URL (start it with `LIVEKIT_KEYS="fixture-key: fixture-secret-0123456789-abcdefghijklmnop"`) |
 | Web | `cd web && npm test && npm run lint && npm run build` (on Windows, run from a terminal whose path starts with an upper-case `C:`; a lower-case `c:` makes Vitest load twice and fail) |
 | Android | `cd android && ./gradlew testDebugUnitTest` |
 

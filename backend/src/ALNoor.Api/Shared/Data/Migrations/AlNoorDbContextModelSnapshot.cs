@@ -154,6 +154,67 @@ namespace ALNoor.Api.Shared.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ALNoor.Api.Shared.Data.ClassSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ClassId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EndReason")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RoomName")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("StartedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ClassSessions_ClassId_Live")
+                        .HasFilter("\"Status\" = 'Live'");
+
+                    b.HasIndex("RoomName")
+                        .IsUnique();
+
+                    b.HasIndex("StartedByUserId");
+
+                    b.HasIndex("ClassId", "StartedAt")
+                        .IsDescending(false, true);
+
+                    b.ToTable("ClassSessions", t =>
+                        {
+                            t.HasCheckConstraint("CK_ClassSessions_EndReason", "\"EndReason\" IS NULL OR \"EndReason\" IN ('Teacher','Timeout','System')");
+
+                            t.HasCheckConstraint("CK_ClassSessions_Status", "\"Status\" IN ('Live','Ended')");
+                        });
+                });
+
             modelBuilder.Entity("ALNoor.Api.Shared.Data.ClassStudent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -239,6 +300,40 @@ namespace ALNoor.Api.Shared.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("ALNoor.Api.Shared.Data.SessionParticipantBlock", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BlockedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BlockedByUserId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("SessionId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("SessionParticipantBlocks");
                 });
 
             modelBuilder.Entity("ALNoor.Api.Shared.Data.Tenant", b =>
@@ -378,6 +473,23 @@ namespace ALNoor.Api.Shared.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ALNoor.Api.Shared.Data.ClassSession", b =>
+                {
+                    b.HasOne("ALNoor.Api.Shared.Data.Class", "Class")
+                        .WithMany()
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ALNoor.Api.Shared.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("StartedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Class");
+                });
+
             modelBuilder.Entity("ALNoor.Api.Shared.Data.ClassStudent", b =>
                 {
                     b.HasOne("ALNoor.Api.Shared.Data.Class", "Class")
@@ -399,6 +511,27 @@ namespace ALNoor.Api.Shared.Data.Migrations
 
             modelBuilder.Entity("ALNoor.Api.Shared.Data.RefreshToken", b =>
                 {
+                    b.HasOne("ALNoor.Api.Shared.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ALNoor.Api.Shared.Data.SessionParticipantBlock", b =>
+                {
+                    b.HasOne("ALNoor.Api.Shared.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("BlockedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ALNoor.Api.Shared.Data.ClassSession", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("ALNoor.Api.Shared.Data.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")

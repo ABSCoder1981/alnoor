@@ -4,6 +4,7 @@ using ALNoor.Api.Features.Auth;
 using ALNoor.Api.Features.Classes;
 using ALNoor.Api.Features.Dev;
 using ALNoor.Api.Features.LiveKit;
+using ALNoor.Api.Features.Sessions;
 using ALNoor.Api.Features.Students;
 using ALNoor.Api.Shared.Audit;
 using ALNoor.Api.Shared.Data;
@@ -14,9 +15,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -82,6 +85,33 @@ builder.Services.AddSingleton<LoginRateLimiter>();
 builder.Services.AddScoped<TokenIssuer>();
 builder.Services.AddScoped<AuditLogger>();
 builder.Services.AddScoped<CurrentUser>();
+builder.Services.AddScoped<LiveRoomCleanup>();
+
+// Join endpoint: 20 requests/minute per signed-in user (PRD 21.1). Configurable so tests can lower it.
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy(SessionEndpoints.JoinRateLimitPolicy, http =>
+    {
+        var permits = http.RequestServices.GetRequiredService<IConfiguration>().GetValue("Sessions:JoinRequestsPerMinute", 20);
+        var user = http.User.FindFirst("sub")?.Value ?? http.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+        return RateLimitPartition.GetFixedWindowLimiter(user, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = permits,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        });
+    });
+    options.OnRejected = async (context, ct) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        context.HttpContext.Response.Headers.RetryAfter = "60";
+        await context.HttpContext.RequestServices.GetRequiredService<IProblemDetailsService>().WriteAsync(new ProblemDetailsContext
+        {
+            HttpContext = context.HttpContext,
+            ProblemDetails = { Status = StatusCodes.Status429TooManyRequests, Title = "Too many requests. Wait a minute and try again." },
+        });
+    };
+});
 
 builder.Services.AddCors();
 builder.Services.AddOptions<CorsOptions>().Configure<IConfiguration>((options, configuration) =>
@@ -120,6 +150,7 @@ app.UseSecurityHeaders();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())
 {
@@ -136,6 +167,7 @@ app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = check => che
 app.MapAuthEndpoints();
 app.MapStudentEndpoints();
 app.MapClassEndpoints();
+app.MapSessionEndpoints();
 
 await app.RunAsync();
 return 0;

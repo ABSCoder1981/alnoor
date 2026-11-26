@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using ALNoor.Api.Features.Auth;
+using ALNoor.Api.Features.Sessions;
 using ALNoor.Api.Shared.Audit;
 using ALNoor.Api.Shared.Data;
 using ALNoor.Api.Shared.Security;
@@ -107,7 +108,7 @@ internal static class StudentEndpoints
 
     private static async Task<IResult> UpdateStatusAsync(
         Guid id, UpdateStudentStatusRequest request, AlNoorDbContext db, CurrentUser current, TokenIssuer tokens,
-        AuditLogger audit, TimeProvider time, CancellationToken ct)
+        LiveRoomCleanup liveRooms, AuditLogger audit, TimeProvider time, CancellationToken ct)
     {
         var student = await VisibleStudents(db, current.Id).SingleOrDefaultAsync(u => u.Id == id, ct);
         if (student is null)
@@ -124,12 +125,18 @@ internal static class StudentEndpoints
             if (!activate)
             {
                 // FR-AUTH-06: no new tokens. Access tokens stop working immediately because every request re-checks IsActive.
-                // Removal from a live room is added with sessions in Phase 4.
                 await tokens.RevokeAllAsync(student.Id, exceptTokenId: null, ct);
             }
         }
 
-        return await SaveAsync(db, student, ct);
+        var result = await SaveAsync(db, student, ct);
+        if (!activate)
+        {
+            // After the change is saved (join re-checks IsActive), disconnect them from any live class.
+            await liveRooms.RemoveFromLiveRoomsAsync(student.Id, onlyClassId: null, ct);
+        }
+
+        return result;
     }
 
     private static async Task<IResult> ResetPasswordAsync(

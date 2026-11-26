@@ -77,4 +77,30 @@ public sealed class LiveKitTokenService(IOptions<LiveKitOptions> options, TimePr
 
         return new LiveKitJoinToken(_handler.CreateToken(descriptor), expiresAt);
     }
+
+    /// <summary>
+    /// Short-lived (60 s) token for the backend's own RoomService calls (PRD 14.5). Never sent to clients:
+    /// moderation always goes through our API, which checks the caller first.
+    /// </summary>
+    public string CreateServerToken(string? room)
+    {
+        var settings = options.Value;
+        var now = timeProvider.GetUtcNow();
+        var video = new Dictionary<string, object> { ["roomCreate"] = true, ["roomList"] = true, ["roomAdmin"] = true };
+        if (!string.IsNullOrEmpty(room))
+        {
+            video["room"] = room;
+        }
+
+        return _handler.CreateToken(new SecurityTokenDescriptor
+        {
+            Issuer = settings.ApiKey,
+            NotBefore = now.UtcDateTime,
+            Expires = now.AddSeconds(60).UtcDateTime,
+            Claims = new Dictionary<string, object> { ["video"] = video },
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.ApiSecret)),
+                SecurityAlgorithms.HmacSha256),
+        });
+    }
 }

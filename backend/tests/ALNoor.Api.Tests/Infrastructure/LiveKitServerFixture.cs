@@ -20,8 +20,18 @@ public sealed class LiveKitServerFixture : IAsyncLifetime
 
     public string? StartError { get; private set; }
 
+    /// <summary>Optional: http URL of an already running livekit-server started with the fixture keys (no Docker needed).</summary>
+    public const string ServerVariable = "ALNOOR_TEST_LIVEKIT";
+
     public async ValueTask InitializeAsync()
     {
+        var external = Environment.GetEnvironmentVariable(ServerVariable);
+        if (!string.IsNullOrWhiteSpace(external))
+        {
+            HttpBaseUrl = new Uri(external);
+            return;
+        }
+
         try
         {
             _container = new ContainerBuilder(Image)

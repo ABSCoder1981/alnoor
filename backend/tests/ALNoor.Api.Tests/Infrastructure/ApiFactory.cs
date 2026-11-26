@@ -1,6 +1,9 @@
+using ALNoor.Api.Features.LiveKit;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ALNoor.Api.Tests.Infrastructure;
 
@@ -15,6 +18,9 @@ public sealed class ApiFactory(string connectionString, string environment = "Te
     public const string LiveKitUrl = "ws://livekit.test.example:7880";
     public const string LiveKitApiKey = "test-api-key";
     public const string LiveKitApiSecret = "test-secret-0123456789-abcdefghijklmnop";
+
+    /// <summary>In-memory LiveKit used by this API instance (replaces the real RoomService client).</summary>
+    public FakeLiveKitRoomService Rooms { get; } = new();
 
     /// <summary>Base64 of 48 fixed bytes; test-only signing key.</summary>
     public static readonly string JwtSigningKey = Convert.ToBase64String(Enumerable.Range(1, 48).Select(i => (byte)i).ToArray());
@@ -43,6 +49,7 @@ public sealed class ApiFactory(string connectionString, string environment = "Te
         }
 
         builder.ConfigureAppConfiguration(config => config.AddInMemoryCollection(settings));
+        builder.ConfigureTestServices(services => services.AddSingleton<ILiveKitRoomService>(Rooms));
     }
 
     /// <summary>A Npgsql connection string to a port where nothing listens, with a short timeout.</summary>
